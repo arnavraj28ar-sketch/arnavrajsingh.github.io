@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ARNAV.exe</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --green: #00ff41;
+    --green-dim: #00cc33;
+    --green-dark: #003311;
+    --green-glow: #00ff4133;
+    --amber: #ffb300;
+    --red: #ff2244;
+    --bg: #000a00;
+    --bg2: #000f00;
+    --panel: #001a00;
+    --border: #00ff4122;
+    --border-bright: #00ff4166;
+    --text: #00ff41;
+    --text-dim: #00aa2a;
+    --text-muted: #006618;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent, transparent 2px,
+      rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  @keyframes flicker {
+    0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.92} 94%{opacity:1} 96%{opacity:0.95} 97%{opacity:1}
+  }
+  body { animation: flicker 8s infinite; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+  /* ─── BOOT SCREEN ─── */
+  #boot-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 1000;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: flex-start;
+    padding: 4rem;
+    animation: bootFade 0.5s ease 4s forwards;
+  }
+  @keyframes bootFade { to { opacity:0; pointer-events:none; } }
+
+  .boot-line {
+    font-size: clamp(0.7rem, 1.5vw, 0.88rem);
+    margin-bottom: 0.35rem;
+    opacity: 0;
+    animation: bootReveal 0.1s ease forwards;
+  }
+  .boot-line.ok   { color: var(--green); }
+  .boot-line.warn { color: var(--amber); }
+  .boot-line.info { color: var(--text-dim); }
+  @keyframes bootReveal { to { opacity:1; } }
+
+  .boot-line:nth-child(1)  { animation-delay:0.15s; }
+  .boot-line:nth-child(2)  { animation-delay:0.45s; }
+  .boot-line:nth-child(3)  { animation-delay:0.80s; }
+  .boot-line:nth-child(4)  { animation-delay:1.10s; }
+  .boot-line:nth-child(5)  { animation-delay:1.40s; }
+  .boot-line:nth-child(6)  { animation-delay:1.70s; }
+  .boot-line:nth-child(7)  { animation-delay:2.00s; }
+  .boot-line:nth-child(8)  { animation-delay:2.30s; }
+  .boot-line:nth-child(9)  { animation-delay:2.60s; }
+  .boot-line:nth-child(10) { animation-delay:2.90s; }
+  .boot-line:nth-child(11) { animation-delay:3.20s; }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top:0; left:0; right:0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.8rem 2rem;
+    background: rgba(0,10,0,0.96);
+    border-bottom: 1px solid var(--border-bright);
+    backdrop-filter: blur(4px);
+  }
+  .nav-brand {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem; font-weight: 700;
+    color: var(--green); letter-spacing: 0.1em;
+  }
+  .nav-brand span { color: var(--amber); }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a {
+    font-size: 0.75rem; color: var(--text-dim);
+    text-decoration: none; letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--green); text-shadow: 0 0 8px var(--green); }
+  .nav-status {
+    font-size: 0.7rem; color: var(--text-dim);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .status-dot {
+    width:7px; height:7px; border-radius:50%;
+    background: var(--green);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ─── HERO ─── */
+  #home {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 6rem 2rem 3rem;
+    position: relative; overflow: hidden;
+  }
+  #home::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridMove 20s linear infinite;
+    opacity: 0.4;
+  }
+  @keyframes gridMove { from{background-position:0 0} to{background-position:60px 60px} }
+
+  .hud-corner {
+    position: absolute; width:80px; height:80px;
+    border-color: var(--green-dim); border-style: solid; opacity: 0.5;
+  }
+  .hud-tl { top:80px; left:20px; border-width:2px 0 0 2px; }
+  .hud-tr { top:80px; right:20px; border-width:2px 2px 0 0; }
+  .hud-bl { bottom:20px; left:20px; border-width:0 0 2px 2px; }
+  .hud-br { bottom:20px; right:20px; border-width:0 2px 2px 0; }
+
+  .hero-badge {
+    font-size: 0.7rem; color: var(--text-dim);
+    letter-spacing: 0.15em; margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .hero-badge::before,.hero-badge::after {
+    content:''; width:40px; height:1px; background: var(--green-dim);
+  }
+
+  .hero-name {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(3rem,10vw,8rem);
+    font-weight: 900; line-height: 0.9;
+    color: var(--green);
+    text-shadow: 0 0 40px var(--green-glow), 0 0 80px rgba(0,255,65,0.1);
+    position: relative; z-index: 1;
+  }
+  @keyframes glitch1 {
+    0%,100%{clip-path:inset(0 0 100% 0)}
+    10%{clip-path:inset(20% 0 60% 0);transform:translate(-3px)}
+    20%{clip-path:inset(50% 0 30% 0);transform:translate(3px)}
+    30%{clip-path:inset(0 0 100% 0)}
+  }
+  @keyframes glitch2 {
+    0%,100%{clip-path:inset(0 0 100% 0)}
+    15%{clip-path:inset(60% 0 10% 0);transform:translate(4px);color:var(--amber)}
+    25%{clip-path:inset(30% 0 55% 0);transform:translate(-4px)}
+    35%{clip-path:inset(0 0 100% 0)}
+  }
+  .hero-name::before,.hero-name::after {
+    content: attr(data-text);
+    position: absolute; left:0; top:0; width:100%;
+    font-family:'Orbitron',monospace; font-weight:900;
+  }
+  .hero-name::before { animation: glitch1 6s infinite 1s; color:var(--red); }
+  .hero-name::after  { animation: glitch2 6s infinite 2s; color:#00ffff; }
+
+  .hero-lastname {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.8rem,5vw,4rem);
+    font-weight: 400; color: var(--text-dim);
+    letter-spacing: 0.25em;
+    text-shadow: 0 0 20px rgba(0,200,50,0.3);
+    position: relative; z-index: 1;
+  }
+
+  .hero-subtitle {
+    font-size: clamp(0.65rem,1.8vw,0.85rem);
+    color: var(--text-dim); letter-spacing: 0.1em;
+    margin-top: 1.5rem; position: relative; z-index: 1;
+  }
+  .hero-subtitle .sep { color: var(--text-muted); margin: 0 0.5rem; }
+
+  .hero-stats {
+    display: flex; gap: 2rem; margin-top: 2rem;
+    position: relative; z-index: 1;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .hero-stat { text-align: center; font-size: 0.65rem; color: var(--text-muted); letter-spacing:0.1em; }
+  .hero-stat strong { display:block; color:var(--text-dim); font-size:0.75rem; margin-bottom:0.2rem; }
+
+  .hero-btns {
+    display: flex; gap: 1rem; margin-top: 2.5rem;
+    position: relative; z-index: 1;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem; letter-spacing: 0.1em;
+    padding: 0.6rem 1.5rem; border: 1px solid;
+    text-decoration: none; transition: all 0.2s;
+    cursor: pointer; background: transparent;
+  }
+  .btn-primary { border-color:var(--green); color:var(--green); }
+  .btn-primary:hover { background:var(--green); color:#000; box-shadow:0 0 20px var(--green-glow); }
+  .btn-secondary { border-color:var(--text-muted); color:var(--text-dim); }
+  .btn-secondary:hover { border-color:var(--text-dim); color:var(--text); }
+
+  .uptime-display {
+    position: absolute; bottom:2rem; right:2rem;
+    font-size: 0.65rem; color: var(--text-muted); letter-spacing:0.1em;
+  }
+
+  /* ─── SECTIONS ─── */
+  section {
+    padding: 5rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .section-header { margin-bottom: 3rem; }
+  .section-path { font-size:0.7rem; color:var(--text-muted); margin-bottom:0.5rem; letter-spacing:0.1em; }
+  .section-title {
+    font-family:'Orbitron',monospace;
+    font-size:clamp(1.2rem,3vw,1.8rem);
+    font-weight:700; color:var(--green); letter-spacing:0.05em;
+  }
+  .section-title span { color:var(--text-dim); }
+  .sec-divider { width:100%; height:1px; background:linear-gradient(90deg,var(--green-dim),transparent); margin:0.8rem 0 2rem; }
+
+  /* ─── ABOUT ─── */
+  #about { border-top:1px solid var(--border); }
+  .about-grid { display:grid; grid-template-columns:1fr 1fr; gap:2rem; }
+
+  .terminal-box {
+    background:var(--bg2);
+    border:1px solid var(--border-bright);
+    position:relative;
+  }
+  .terminal-bar {
+    background:var(--panel); padding:0.5rem 1rem;
+    font-size:0.65rem; color:var(--text-muted);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:0.5rem;
+  }
+  .terminal-bar::before { content:'●'; color:var(--red); font-size:0.5rem; }
+  .terminal-content { padding:1.5rem; }
+
+  .bio-text { font-size:0.83rem; line-height:1.85; color:var(--text-dim); }
+  .bio-text strong { color:var(--green); font-weight:400; }
+
+  .skills-list { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:1.5rem; }
+  .skill-tag {
+    font-size:0.65rem; padding:0.25rem 0.6rem;
+    border:1px solid var(--border-bright); color:var(--text-dim);
+    letter-spacing:0.05em; transition:all 0.2s;
+  }
+  .skill-tag:hover { border-color:var(--green); color:var(--green); background:var(--green-glow); }
+
+  .skill-bars { margin-top:0.5rem; }
+  .skill-bar-item { margin-bottom:1rem; }
+  .skill-bar-label {
+    display:flex; justify-content:space-between;
+    font-size:0.65rem; color:var(--text-dim); margin-bottom:0.3rem; letter-spacing:0.05em;
+  }
+  .skill-bar-label span { color:var(--text-muted); }
+  .skill-bar-track { height:4px; background:var(--panel); border:1px solid var(--border); overflow:hidden; }
+  .skill-bar-fill {
+    height:100%;
+    background:linear-gradient(90deg,var(--green-dim),var(--green));
+    box-shadow:0 0 8px var(--green-glow);
+    width:0; transition:width 1.5s ease;
+  }
+
+  .sys-table { width:100%; border-collapse:collapse; }
+  .sys-table tr { border-bottom:1px solid var(--border); }
+  .sys-table tr:last-child { border-bottom:none; }
+  .sys-table td { padding:0.5rem 0; font-size:0.72rem; letter-spacing:0.05em; }
+  .sys-table td:first-child { color:var(--text-muted); width:42%; }
+  .sys-table td:last-child  { color:var(--text-dim); }
+
+  /* ─── PROJECTS ─── */
+  #projects { border-top:1px solid var(--border); }
+  .projects-grid { display:grid; gap:1.2rem; }
+
+  .project-card {
+    background:var(--bg2); border:1px solid var(--border);
+    transition:border-color 0.2s, box-shadow 0.2s;
+    cursor:pointer; position:relative; overflow:hidden;
+  }
+  .project-card::before {
+    content:''; position:absolute;
+    top:0; left:0; width:3px; height:100%;
+    background:var(--green);
+    transform:scaleY(0); transition:transform 0.2s; transform-origin:top;
+  }
+  .project-card:hover::before { transform:scaleY(1); }
+  .project-card:hover { border-color:var(--border-bright); box-shadow:0 0 20px rgba(0,255,65,0.05); }
+
+  .project-header {
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:1.2rem 1.5rem 0;
+  }
+  .project-num { font-family:'VT323',monospace; font-size:1.5rem; color:var(--text-muted); }
+  .project-link {
+    font-size:0.65rem; color:var(--text-muted);
+    text-decoration:none; border:1px solid var(--border);
+    padding:0.2rem 0.5rem; transition:all 0.2s;
+  }
+  .project-link:hover { color:var(--green); border-color:var(--green); }
+
+  .project-body { padding:0.8rem 1.5rem 1.2rem; }
+  .project-title {
+    font-family:'Orbitron',monospace; font-size:0.9rem;
+    font-weight:700; color:var(--green); margin-bottom:0.3rem; letter-spacing:0.05em;
+  }
+  .project-desc-short { font-size:0.65rem; color:var(--text-muted); letter-spacing:0.05em; margin-bottom:1rem; }
+  .project-details {
+    display:none; font-size:0.75rem; color:var(--text-dim);
+    line-height:1.75; margin-bottom:1rem;
+    border-top:1px solid var(--border); padding-top:1rem;
+  }
+  .project-details strong { color:var(--green); font-weight:400; }
+  .project-card.open .project-details { display:block; }
+
+  .project-tags { display:flex; flex-wrap:wrap; gap:0.4rem; }
+  .tag { font-size:0.6rem; padding:0.15rem 0.5rem; border:1px solid var(--border); color:var(--text-muted); letter-spacing:0.05em; }
+
+  /* ─── CONTACT ─── */
+  #contact { border-top:1px solid var(--border); }
+  .contact-terminal { background:var(--bg2); border:1px solid var(--border-bright); max-width:700px; margin:0 auto; }
+  .contact-prompt {
+    display:flex; align-items:flex-start; gap:0.5rem;
+    padding:1.5rem; font-size:0.8rem; line-height:1.8; color:var(--text-dim);
+  }
+  .contact-prompt .prompt-sign { color:var(--green); flex-shrink:0; }
+  .contact-json { padding:0 1.5rem 1.5rem; }
+  .json-line { font-size:0.78rem; line-height:1.9; color:var(--text-muted); letter-spacing:0.02em; }
+  .json-key { color:var(--text-dim); }
+  .json-val { color:var(--green); }
+  .json-val a { color:var(--green); text-decoration:none; border-bottom:1px solid var(--border); transition:border-color 0.2s; }
+  .json-val a:hover { border-color:var(--green); }
+
+  .contact-links {
+    display:flex; gap:1rem; justify-content:center;
+    padding:1.5rem; border-top:1px solid var(--border); flex-wrap:wrap;
+  }
+  .contact-link {
+    font-size:0.7rem; color:var(--text-dim); text-decoration:none;
+    border:1px solid var(--border); padding:0.4rem 1rem;
+    letter-spacing:0.05em; transition:all 0.2s;
+  }
+  .contact-link:hover { border-color:var(--green); color:var(--green); box-shadow:0 0 10px var(--green-glow); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top:1px solid var(--border);
+    padding:1.5rem 2rem;
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:0.65rem; color:var(--text-muted); letter-spacing:0.05em;
+    flex-wrap:wrap; gap:0.5rem;
+  }
+  .footer-status { display:flex; gap:1.5rem; }
+  .footer-status span { display:flex; align-items:center; gap:0.3rem; }
+  .footer-status span::before { content:'◉'; color:var(--green); font-size:0.5rem; }
+
+  /* ─── EFFECTS ─── */
+  .effects-panel {
+    position:fixed; right:1rem; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:0.5rem; z-index:50;
+  }
+  .effect-btn {
+    font-family:'Share Tech Mono',monospace; font-size:0.6rem;
+    color:var(--text-muted); background:var(--bg2); border:1px solid var(--border);
+    padding:0.3rem 0.5rem; cursor:pointer; letter-spacing:0.05em;
+    transition:all 0.2s; white-space:nowrap;
+    writing-mode:vertical-rl; text-orientation:mixed;
+  }
+  .effect-btn:hover { color:var(--green); border-color:var(--green); background:var(--green-glow); }
+
+  body.glitch-mode { animation: glitchBody 0.08s infinite !important; }
+  @keyframes glitchBody {
+    0%{filter:hue-rotate(0deg)} 33%{filter:hue-rotate(90deg) saturate(2)} 66%{filter:hue-rotate(180deg)} 100%{filter:hue-rotate(360deg)}
+  }
+
+  #matrix-canvas {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    z-index:998; display:none; pointer-events:none;
+  }
+
+  @media(max-width:768px) {
+    #boot-screen { padding:2rem; }
+    .about-grid { grid-template-columns:1fr; }
+    .effects-panel { display:none; }
+    nav { padding:0.8rem 1rem; }
+    .nav-links { display:none; }
+    section { padding:4rem 1rem; }
+    .hero-stats { gap:1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Boot Screen -->
+<div id="boot-screen">
+  <div class="boot-line ok">[ OK ] Initializing ARNAV.OS v2025.1 ...</div>
+  <div class="boot-line ok">[ OK ] Loading kernel modules: powerbi.ko, excel.ko, sql.ko, n8n.ko</div>
+  <div class="boot-line ok">[ OK ] Mounting /dev/brain → partition: Data_Analytics detected</div>
+  <div class="boot-line info">[ ~~ ] Calibrating dashboard visuals ... 95.2% accuracy achieved</div>
+  <div class="boot-line ok">[ OK ] Power BI: Reports ✓ DAX ✓ Dashboards ✓ Data Models ✓</div>
+  <div class="boot-line ok">[ OK ] Automation Stack: n8n ✓ Excel ✓ SQL ✓ Workflows ✓</div>
+  <div class="boot-line warn">[ !! ] WARNING: Caffeine levels critical — deploying backup motivation ...</div>
+  <div class="boot-line ok">[ OK ] Motivation loaded. Let's ship.</div>
+  <br/>
+  <div class="boot-line ok" style="font-size:2.5rem;font-family:'Orbitron',monospace;animation-delay:3.1s">ARNAV</div>
+  <div class="boot-line ok" style="opacity:0.5;font-family:'Orbitron',monospace;font-size:1.2rem;animation-delay:3.4s">RAJ SINGH</div>
+</div>
+
+<!-- Matrix Canvas -->
+<canvas id="matrix-canvas"></canvas>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-brand">ARNAV<span>.exe</span></div>
+  <div class="nav-links">
+    <a href="#home">⌂ Home</a>
+    <a href="#about">◈ About me</a>
+    <a href="#projects">◧ Projects</a>
+    <a href="#contact">◉ Contact</a>
+  </div>
+  <div class="nav-status"><div class="status-dot"></div>SYSTEM ONLINE</div>
+</nav>
+
+<!-- Effects -->
+<div class="effects-panel">
+  <button class="effect-btn" id="glitch-btn">⚡ GLITCH</button>
+  <button class="effect-btn" id="matrix-btn">▓ MATRIX</button>
+</div>
+
+<!-- Hero -->
+<div id="home" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:6rem 2rem 3rem;position:relative;overflow:hidden;">
+  <div style="content:'';position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;animation:gridMove 20s linear infinite;opacity:0.4;pointer-events:none;"></div>
+  <div class="hud-corner hud-tl"></div>
+  <div class="hud-corner hud-tr"></div>
+  <div class="hud-corner hud-bl"></div>
+  <div class="hud-corner hud-br"></div>
+
+  <div class="hero-badge">AVAILABLE FOR OPPORTUNITIES &amp; INTERNSHIPS</div>
+
+  <div class="hero-name" data-text="ARNAV" style="position:relative;z-index:1;">ARNAV</div>
+  <div class="hero-lastname" style="position:relative;z-index:1;">RAJ SINGH</div>
+
+  <div class="hero-subtitle" style="position:relative;z-index:1;">
+    Data Analyst <span class="sep">*/*</span>
+    Power BI Developer <span class="sep">*/*</span>
+    Automation Builder
+  </div>
+
+  <div class="hero-stats" style="position:relative;z-index:1;">
+    <div class="hero-stat"><strong>LOCATION</strong>JHARKHAND, IN</div>
+    <div class="hero-stat"><strong>STACK</strong>POWER BI · SQL · n8n</div>
+    <div class="hero-stat"><strong>STATUS</strong>BUILDING</div>
+    <div class="hero-stat"><strong>UPTIME</strong><span id="uptime">00:00:00</span></div>
+  </div>
+
+  <div class="hero-btns" style="position:relative;z-index:1;">
+    <a href="#projects" class="btn btn-primary">▶ View Projects</a>
+    <a href="#about" class="btn btn-secondary">◈ About Me</a>
+    <a href="#contact" class="btn btn-secondary">◉ Contact</a>
+  </div>
+
+  <div class="uptime-display">BCA · Jharkhand, India</div>
+</div>
+
+<!-- About -->
+<section id="about">
+  <div class="section-header">
+    <div class="section-path">~/arnav/profile.json</div>
+    <div class="section-title"><span>//</span> About</div>
+    <div class="sec-divider"></div>
+  </div>
+
+  <div class="about-grid">
+    <div style="display:flex;flex-direction:column;gap:1.2rem;">
+      <div class="terminal-box">
+        <div class="terminal-bar">Bio</div>
+        <div class="terminal-content">
+          <div class="bio-text">
+            I'm a <strong>Data Analyst & Power BI Developer</strong> — passionate about
+            transforming raw data into <strong>meaningful, interactive dashboards</strong>
+            that drive real decision-making.
+            <br/><br/>
+            My edge: <strong>end-to-end analytics pipelines</strong>, from data cleaning
+            and SQL querying to building production-grade Power BI reports with DAX.
+            I don't just visualize data — I tell stories with it.
+            <br/><br/>
+            Also deep in <strong>workflow automation with n8n</strong> — building
+            AI-powered automations when I'm not chasing down messy datasets at midnight.
+          </div>
+          <div class="skills-list" id="skill-tags"></div>
+        </div>
+      </div>
+
+      <div class="terminal-box">
+        <div class="terminal-bar">Proficiency</div>
+        <div class="terminal-content">
+          <div class="skill-bars" id="skill-bars"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="terminal-box">
+      <div class="terminal-bar">System Info</div>
+      <div class="terminal-content">
+        <table class="sys-table">
+          <tr><td>OS</td><td>ARNAV.OS v2025</td></tr>
+          <tr><td>Degree</td><td>BCA — Currently Pursuing</td></tr>
+          <tr><td>Specialization</td><td>Data Analytics & BI</td></tr>
+          <tr><td>Location</td><td>Jharkhand, India</td></tr>
+          <tr><td>Primary Tool</td><td>Power BI / Excel / SQL</td></tr>
+          <tr><td>Automation</td><td>n8n Workflow Builder</td></tr>
+          <tr><td>Status</td><td>Building in public</td></tr>
+          <tr><td>Open To</td><td>Internships &amp; Collabs</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Projects -->
+<section id="projects">
+  <div class="section-header">
+    <div class="section-path">~/arnav/work/ — 4 items</div>
+    <div class="section-title"><span>//</span> Projects</div>
+    <div class="sec-divider"></div>
+  </div>
+  <div class="projects-grid" id="projects-grid"></div>
+</section>
+
+<!-- Contact -->
+<section id="contact">
+  <div class="section-header">
+    <div class="section-path">contact.json — arnav@portfolio</div>
+    <div class="section-title"><span>//</span> Contact</div>
+    <div class="sec-divider"></div>
+  </div>
+
+  <div class="contact-terminal">
+    <div class="terminal-bar">terminal</div>
+    <div class="contact-prompt">
+      <span class="prompt-sign">arnav@portfolio:~$</span>
+      <span>cat contact.json</span>
+    </div>
+    <div class="contact-json">
+      <div class="json-line">{</div>
+      <div class="json-line">&nbsp;&nbsp;<span class="json-key">"name"</span>: <span class="json-val">"Arnav Raj Singh"</span>,</div>
+      <div class="json-line">&nbsp;&nbsp;<span class="json-key">"role"</span>: <span class="json-val">"Data Analyst &amp; Power BI Developer"</span>,</div>
+      <div class="json-line">&nbsp;&nbsp;<span class="json-key">"location"</span>: <span class="json-val">"Jharkhand, India"</span>,</div>
+      <div class="json-line">&nbsp;&nbsp;<span class="json-key">"open_to"</span>: <span class="json-val">["internships", "collaborations", "data_problems"]</span>,</div>
+      <div class="json-line">&nbsp;&nbsp;<span class="json-key">"linkedin"</span>: <span class="json-val">"<a href="https://www.linkedin.com/in/arnav-raj-singh-b04a76371" target="_blank">linkedin.com/in/arnav-raj-singh</a>"</span>,</div>
+      <div class="json-line">&nbsp;&nbsp;<span class="json-key">"email"</span>: <span class="json-val">"<a href="mailto:arnavrajsingh734@gmail.com">arnavrajsingh734@gmail.com</a>"</span>,</div>
+      <div class="json-line">&nbsp;&nbsp;<span class="json-key">"status"</span>: <span class="json-val">"ONLINE — reply within 24h"</span></div>
+      <div class="json-line">}</div>
+    </div>
+    <div class="contact-links">
+      <a class="contact-link" href="https://www.linkedin.com/in/arnav-raj-singh-b04a76371" target="_blank">↗ LinkedIn</a>
+      <a class="contact-link" href="mailto:arnavrajsingh734@gmail.com">↗ Email</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div>ARNAV.OS v2025 — All systems nominal</div>
+  <div class="footer-status">
+    <span>SYSTEM ONLINE</span>
+    <span>POWER BI READY</span>
+    <span>DATA LOADED</span>
+  </div>
+</footer>
+
+<script>
+const skills = [
+  "Power BI", "Excel", "Data Visualization",
+  "Dashboard Development", "Data Cleaning",
+  "Basic SQL", "Business Analytics",
+  "Workflow Automation", "n8n Automation", "DAX"
+];
+
+const skillBars = [
+  { label: "Power BI / Dashboards", pct: 92 },
+  { label: "Excel / Data Analysis",  pct: 88 },
+  { label: "Data Visualization",     pct: 85 },
+  { label: "SQL / Querying",         pct: 72 },
+  { label: "n8n / Automation",       pct: 78 },
+];
+
+const projects = [
+  {
+    num: "01",
+    title: "COVID-19 Insights Dashboard",
+    descShort: "Power BI · Data Visualization · Trend Analysis",
+    tags: ["Power BI","DAX","Data Cleaning","Visualization"],
+    link: "https://www.linkedin.com/in/arnav-raj-singh-b04a76371",
+    detail: `<strong>What it does:</strong> Built a comprehensive Power BI dashboard analyzing COVID-19 data trends — cases, recoveries, deaths, and country-level insights with dynamic filtering.<br/>
+    <strong>Stack:</strong> Power BI · DAX · Excel · Data Transformation.<br/>
+    <strong>Highlight:</strong> Interactive slicers allow drill-down by country, date range, and metric — turning complex public health data into clear visual narratives.`
+  },
+  {
+    num: "02",
+    title: "HR Analytics Dashboard",
+    descShort: "Power BI · Employee Attrition · Workforce Insights",
+    tags: ["Power BI","HR Analytics","DAX","Data Modeling"],
+    link: "https://www.linkedin.com/in/arnav-raj-singh-b04a76371",
+    detail: `<strong>What it does:</strong> Created an HR dashboard in Power BI analyzing employee attrition, department distribution, job roles, and workforce insights for data-driven HR decisions.<br/>
+    <strong>Stack:</strong> Power BI · DAX · Excel · Data Cleaning.<br/>
+    <strong>Highlight:</strong> Attrition prediction visuals and department heatmaps help HR teams proactively address retention issues.`
+  },
+  {
+    num: "03",
+    title: "Sales Performance Dashboard",
+    descShort: "Power BI · Revenue Tracking · Regional Analysis",
+    tags: ["Power BI","Sales Analytics","DAX","Excel"],
+    link: "https://www.linkedin.com/in/arnav-raj-singh-b04a76371",
+    detail: `<strong>What it does:</strong> Developed a sales analytics dashboard tracking revenue, profit margins, and regional sales trends with fully interactive visuals and time-based comparisons.<br/>
+    <strong>Stack:</strong> Power BI · DAX · Excel · Business Analytics.<br/>
+    <strong>Highlight:</strong> Month-over-month growth tracking and regional breakdowns give sales teams instant performance visibility.`
+  },
+  {
+    num: "04",
+    title: "YouTube AI Summary Automation",
+    descShort: "n8n Workflow · AI Integration · Social Media Automation",
+    tags: ["n8n","Automation","AI","Workflow"],
+    link: "https://www.linkedin.com/in/arnav-raj-singh-b04a76371",
+    detail: `<strong>What it does:</strong> Built an n8n automation workflow that takes a YouTube video URL, generates an AI-powered summary, and converts it into ready-to-post social media content — fully automated.<br/>
+    <strong>Stack:</strong> n8n · AI API · Workflow Automation · Social Media APIs.<br/>
+    <strong>Highlight:</strong> Zero manual effort — from video to publishable content in seconds. A real production workflow, not a demo.`
+  },
+];
+
+// ── Render Tags
+const tagContainer = document.getElementById('skill-tags');
+skills.forEach(s => {
+  const el = document.createElement('span');
+  el.className = 'skill-tag';
+  el.textContent = s;
+  tagContainer.appendChild(el);
+});
+
+// ── Render Skill Bars
+const barsContainer = document.getElementById('skill-bars');
+skillBars.forEach(s => {
+  barsContainer.innerHTML += `
+    <div class="skill-bar-item">
+      <div class="skill-bar-label">${s.label}<span>${s.pct}%</span></div>
+      <div class="skill-bar-track"><div class="skill-bar-fill" data-pct="${s.pct}"></div></div>
+    </div>`;
+});
+
+// Animate on scroll
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.querySelectorAll('.skill-bar-fill').forEach(bar => {
+        bar.style.width = bar.dataset.pct + '%';
+      });
+    }
+  });
+}, { threshold: 0.3 });
+observer.observe(document.getElementById('about'));
+
+// ── Render Projects
+const grid = document.getElementById('projects-grid');
+projects.forEach(p => {
+  const card = document.createElement('div');
+  card.className = 'project-card';
+  card.innerHTML = `
+    <div class="project-header">
+      <div class="project-num">${p.num}</div>
+      <a class="project-link" href="${p.link}" target="_blank">↗ VIEW</a>
+    </div>
+    <div class="project-body">
+      <div class="project-title">${p.title}</div>
+      <div class="project-desc-short">${p.descShort}</div>
+      <div class="project-details">${p.detail}</div>
+      <div class="project-tags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    </div>`;
+  card.addEventListener('click', () => card.classList.toggle('open'));
+  grid.appendChild(card);
+});
+
+// ── Uptime
+const uptimeEl = document.getElementById('uptime');
+let sec = 0;
+setInterval(() => {
+  sec++;
+  const h = String(Math.floor(sec/3600)).padStart(2,'0');
+  const m = String(Math.floor((sec%3600)/60)).padStart(2,'0');
+  const s = String(sec%60).padStart(2,'0');
+  if(uptimeEl) uptimeEl.textContent = `${h}:${m}:${s}`;
+}, 1000);
+
+// ── Glitch
+let glitchOn = false;
+document.getElementById('glitch-btn').addEventListener('click', () => {
+  glitchOn = !glitchOn;
+  document.body.classList.toggle('glitch-mode', glitchOn);
+  setTimeout(() => { glitchOn=false; document.body.classList.remove('glitch-mode'); }, 2000);
+});
+
+// ── Matrix
+let matrixOn = false;
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+let matrixInterval;
+
+function startMatrix() {
+  canvas.style.display='block';
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  const cols = Math.floor(canvas.width/14);
+  const drops = Array(cols).fill(1);
+  matrixInterval = setInterval(() => {
+    ctx.fillStyle='rgba(0,10,0,0.05)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#00ff41'; ctx.font='12px Share Tech Mono';
+    drops.forEach((y,i) => {
+      const ch = String.fromCharCode(33+Math.random()*94);
+      ctx.fillText(ch, i*14, y*14);
+      if(y*14>canvas.height && Math.random()>0.975) drops[i]=0;
+      drops[i]++;
+    });
+  }, 50);
+}
+function stopMatrix() {
+  clearInterval(matrixInterval);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  canvas.style.display='none';
+}
+
+document.getElementById('matrix-btn').addEventListener('click', () => {
+  matrixOn = !matrixOn;
+  matrixOn ? startMatrix() : stopMatrix();
+});
+</script>
+</body>
+</html>
