@@ -1,13 +1,20 @@
 # Hi, I'm Arnav Raj 👋
 
-### Aspiring Data Analyst | SQL | Power BI | Python
+### Aspiring Data Analyst | SQL | Power BI | Excel
 
-Welcome to my GitHub profile! I'm an aspiring Data Analyst passionate
-about transforming raw data into meaningful insights through data
-analysis and visualization.
+Welcome to my GitHub profile!
 
-I enjoy working with datasets, building interactive dashboards, and
-using data to solve real-world problems.
+## 🙋‍♂️ About Me
+
+Hey! I'm Arnav Raj, a BCA student passionate about Data Analytics
+and transforming raw data into meaningful insights.
+
+I'm developing my skills in SQL, Power BI, Excel, and data visualization.
+I enjoy exploring datasets, identifying trends, and creating dashboards
+that make data easier to understand.
+
+I believe in continuous learning and improving my analytical skills
+through hands-on projects and practical experience.
 
 ## 🛠️ Skills & Technologies
 
@@ -15,33 +22,34 @@ using data to solve real-world problems.
 - **Power BI:** Interactive dashboards, DAX, and data visualization
 - **Excel:** Data cleaning, analysis, and reporting
 - **Python:** Data analysis fundamentals
-- **Tools:** SQL Server Management Studio, GitHub
+- **Tools:** SQL Server Management Studio (SSMS), GitHub
 
-## 📊 Featured Projects
+## 🚀 My Projects
 
 ### 📈 Stock Market Analysis Using SQL
-Analysed six stocks using SQL Server, moving averages, Buy/Sell signals,
-price performance analysis, and bonus adjustments.
+Analysed historical stock data for six companies using SQL Server.
+Calculated moving averages, generated trading signals, compared stock
+performance, and investigated unusual price movements.
 
 ### 🦠 COVID-19 Data Analysis
-Explored COVID-19 data to understand cases, deaths, and trends.
+Explored COVID-19 data to analyse cases, deaths, and trends.
 
 ### 💰 Mutual Fund Analysis
-Analysed mutual fund data to compare fund performance and returns.
+Analysed mutual fund data to compare performance and understand returns.
 
 ### 👥 Employee Attrition Analysis
-Explored employee attrition data to identify workforce trends and
-factors associated with employee turnover.
+Explored employee data to identify attrition patterns and workforce trends.
 
 ## 🎯 Career Goal
 
-My goal is to build strong data analytics skills and create projects
-that turn complex data into actionable insights.
+My goal is to become a skilled Data Analyst by strengthening my technical
+knowledge, working with real-world datasets, and building projects that
+turn data into meaningful insights.
 
-## 🤝 Connect With Me
+## 🌐 Connect With Me
 
-- **GitHub:** [My GitHub Profile](https://github.com/arnavrajsingh)
-- **Portfolio:** [Visit My Portfolio](https://arnavrajsingh.github.io)
+- **GitHub:** [Visit my GitHub](https://github.com/arnavrajsingh)
+- **Portfolio:** [Explore my Portfolio](https://arnavraj28ar-sketch.github.io/arnavrajsingh.github.io/)
 
 ---
 
